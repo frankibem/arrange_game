@@ -3,7 +3,7 @@ import sys
 import subprocess
 
 """
-Requires python 3.5 and above (subprocess)
+Requires python 3.5 and above
 """
 
 TEMPLATE_FILE = "template.txt"  # contains non dynamic parts of problem (in ASP)
@@ -20,6 +20,12 @@ UP = 'up'
 DOWN = 'down'
 MOVES = [LEFT, RIGHT, UP, DOWN]
 
+
+# Arrange Game Settings
+STEPS = 15
+SIZE = 3
+MIN_MOVE = 15
+MAX_MOVE = 25
 
 class Arrange:
     """
@@ -87,7 +93,7 @@ class Arrange:
             self.weights[c] = random.randint(self.min_weight, self.max_weight)
 
         # Shuffle board by taking random initial moves
-        move_count = random.randint(5, 15)
+        move_count = random.randint(MIN_MOVE, MAX_MOVE)
         for i in range(move_count):
             valid_moves = self.__valid_moves()
             direction = random.choice(valid_moves)
@@ -123,14 +129,19 @@ class Arrange:
         """
         Display the current configuration for debugging
         """
-
+        state_output = open('init_state.txt','w')
         for i in range(self.size):
             for j in range(self.size):
                 c = self.cells[i * self.size + j]
                 print('{}({})   '.format(('X' if c == HOLE else c), self.weights[c]), end='')
+                if(c == HOLE):
+                    state_output.write('X('+ str(self.weights[c])+') ')
+                else:
+                    state_output.write(str(c)+'('+str(self.weights[c])+') ')
             print()
+            state_output.write('\n')
         print('\n')
-
+        
     def write_asp(self, fname=GEN_FILE):
         """
         Writes the rules to solve the current game using ASP (clingo)
@@ -187,7 +198,7 @@ class Arrange:
         print('Done.')
 
     @staticmethod
-    def solve(clingo_path, steps=15, in_fname=GEN_FILE, soln_fname=SOLN_FILE):
+    def solve(clingo_path, steps=STEPS, in_fname=GEN_FILE, soln_fname=SOLN_FILE):
         print("Solving ASP program in {} and writing to {}...".format(in_fname, soln_fname))
 
         commands = [clingo_path, in_fname, '-c n={}'.format(steps), '0']
@@ -205,7 +216,7 @@ if __name__ == '__main__':
 
     clingo = sys.argv[1]
 
-    game = Arrange(2)
+    game = Arrange(SIZE)
     game.pretty_print()
     game.write_asp()
     game.solve(clingo)
