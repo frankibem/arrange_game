@@ -23,7 +23,7 @@ MOVES = [LEFT, RIGHT, UP, DOWN]
 
 # Arrange Game Settings
 STEPS = 15
-SIZE = 3
+SIZE = 4
 MIN_MOVE = 15
 MAX_MOVE = 25
 
@@ -129,19 +129,26 @@ class Arrange:
         """
         Display the current configuration for debugging
         """
-        state_output = open('init_state.txt','w')
+        
         for i in range(self.size):
             for j in range(self.size):
                 c = self.cells[i * self.size + j]
                 print('{}({})   '.format(('X' if c == HOLE else c), self.weights[c]), end='')
+            print()
+        print('\n')
+
+    def output_state(self):
+        state_output = open('init_state.txt','w')
+        for i in range(self.size):
+            for j in range(self.size):
+                c = self.cells[i * self.size + j]
                 if(c == HOLE):
                     state_output.write('X('+ str(self.weights[c])+') ')
                 else:
                     state_output.write(str(c)+'('+str(self.weights[c])+') ')
-            print()
             state_output.write('\n')
-        print('\n')
-        
+
+    
     def write_asp(self, fname=GEN_FILE):
         """
         Writes the rules to solve the current game using ASP (clingo)
@@ -218,5 +225,6 @@ if __name__ == '__main__':
 
     game = Arrange(SIZE)
     game.pretty_print()
+    game.output_state()
     game.write_asp()
     game.solve(clingo)

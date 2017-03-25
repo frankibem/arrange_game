@@ -64,7 +64,6 @@ class State:
 
 def parse_element(element, State, gui):
     gui.define_state(State.state)
-    # gui.draw_board(0)
 
     print("Parsing Atom: " + element)
     stack = []
@@ -138,9 +137,9 @@ class GUI:
         self.states = 0
         self.win = GraphWin("Arrange Game", 1240,720)
 
+    #Set State and Print
     def define_state(self,state):
         self.state = state
-        # for step in range(step):
         self.draw_board(self.states)
         self.states = self.states+1
         
@@ -159,34 +158,41 @@ class GUI:
 
 
     def draw_board(self,steps):
-        # Iterate through state steps
+        #Constants
         SIZE = len(self.state[0])
         LEVEL = 0
-
+        edge = 10
+        cell_size = 50
+        board_size = (cell_size * SIZE)
+        
+        # Iterate through state steps
         for step in range(steps + 1):
-            board_size = (50 * SIZE)
+           
 
-            if(((board_size + 10) * step) > 1200 * (LEVEL + 1)):
+            # Move down one Board Size when no more step boards fit on screen
+            if(((board_size + edge) * step) > 1200 * (LEVEL + 1)):
                 LEVEL = LEVEL + 1
-
-            top_left_x = (board_size * step + 10) - (1200 * LEVEL)
-            top_left_y = 10 + ((board_size + 10) * LEVEL)
+            
+            #Point References
+            top_left_x = (board_size * step + edge) - (1200 * LEVEL)
+            top_left_y = edge + ((board_size + edge) * LEVEL)
             bottom_right_x = board_size + (board_size * step) - (1200 * LEVEL)
-            bottom_right_y = (10 + board_size) + ((board_size + 10) * LEVEL)
+            bottom_right_y = (edge + board_size) + ((board_size + edge) * LEVEL)
 
             for i in range(SIZE):
                 #Draw Board Edges
                 self.draw_border(top_left_x,top_left_y, bottom_right_x,bottom_right_y)
 
                 #Horizontal Lines
-                self.draw_line(top_left_x, top_left_y + (50 * i), bottom_right_x, top_left_y + (50 * i))
+                self.draw_line(top_left_x, top_left_y + (cell_size * i), bottom_right_x, top_left_y + (cell_size * i))
 
                 #Vertical Lines
-                self.draw_line(top_left_x + (50 * i), 10 + (board_size + 10) * LEVEL,top_left_x + (50 * i),10 + (50 * (SIZE)) + ((board_size + 10) * LEVEL))
+                self.draw_line(top_left_x + (cell_size * i), edge + (board_size + edge) * LEVEL,top_left_x + (cell_size * i),edge + (cell_size * (SIZE)) + ((board_size + edge) * LEVEL))
             
+        #Print Text    
         for x in range(SIZE):
             for y in range(SIZE):
-                self.draw_text(Point((top_left_x+25)+ 50 * x,(top_left_y+25)+50 * y),self.state[y][x])
+                self.draw_text(Point((top_left_x+25)+ cell_size * x,(top_left_y+25)+ cell_size * y),self.state[y][x])
 
     
 #------- Main --------
@@ -208,16 +214,19 @@ if(lines[3] == "UNSATISFIABLE"):
 lines = lines[3:len(lines) - 9]          #Remove Generic Clingo Print outs
 
 AS = lines[len(lines)-2:len(lines)-1][0].split(" ")     #Get Last answer set into list['Answer: #', Answer Set, 'Optimization: #']
-#print(lines)
-#print(AS)
 
-steps = len(AS) -1
+# Number of Steps to Solution
+steps = len(AS) - 1
 
+#Initialize GUI
 gui = GUI(steps)
 
 # Parse each element in the answer set
 for element in AS:
     parse_element(element, state, gui)
+
+
+#Hold GUI until click
 gui.win.getMouse()
 
 
