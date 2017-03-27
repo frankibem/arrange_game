@@ -1,6 +1,6 @@
 import random
-import sys
 import subprocess
+import argparse
 
 """
 Requires python 3.5 and above
@@ -9,6 +9,7 @@ Requires python 3.5 and above
 TEMPLATE_FILE = "template.txt"  # contains non dynamic parts of problem (in ASP)
 GEN_FILE = 'generated.lp'  # Generated ASP program goes here
 SOLN_FILE = 'solution.txt'  # Clingo solution goes here
+STATE_FILE = "init_state.txt"  # Initial configuration is stored here
 
 # Placeholder for empty cell
 HOLE = -1
@@ -20,12 +21,12 @@ UP = 'up'
 DOWN = 'down'
 MOVES = [LEFT, RIGHT, UP, DOWN]
 
-
 # Arrange Game Settings
 STEPS = 15
 SIZE = 4
 MIN_MOVE = 15
 MAX_MOVE = 25
+
 
 class Arrange:
     """
@@ -129,7 +130,7 @@ class Arrange:
         """
         Display the current configuration for debugging
         """
-        
+
         for i in range(self.size):
             for j in range(self.size):
                 c = self.cells[i * self.size + j]
@@ -137,25 +138,21 @@ class Arrange:
             print()
         print('\n')
 
-    def output_state(self):
-        state_output = open('init_state.txt','w')
-        for i in range(self.size):
-            for j in range(self.size):
-                c = self.cells[i * self.size + j]
-                if(c == HOLE):
-                    state_output.write('X('+ str(self.weights[c])+') ')
-                else:
-                    state_output.write(str(c)+'('+str(self.weights[c])+') ')
-            state_output.write('\n')
+    def write_state(self):
+        with open(STATE_FILE, 'w') as ofile:
+            for i in range(self.size):
+                for j in range(self.size):
+                    c = self.cells[i * self.size + j]
+                    ofile.write('{}({}) '.format(('X' if c == HOLE else c), self.weights[c]))
+                ofile.write('\n')
 
-    
     def write_asp(self, fname=GEN_FILE):
         """
         Writes the rules to solve the current game using ASP (clingo)
         :param fname: The name of the output file
         """
 
-        print('Writing ASP program to {}'.format(fname))
+        print('Writing ASP program to {}...'.format(fname))
         with open(fname, 'w') as ofile:
             # Write size
             ofile.write('size(0..{}).\n'.format(self.size))
@@ -216,15 +213,23 @@ class Arrange:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Err: Path to clingo executable is required')
-        print('Usage: python3 arrange.py <path_to_clingo>')
-        exit(-1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('clingo_path', help='The path to the clingo solver')
+    parser.add_argument('-s', '--size', type=int, default=SIZE, help='The board dimensions will be (size x size)')
+    parser.add_argument('-n', '--time_steps', type=int, default=STEPS,
+                        help='The max number of steps for the clingo to solve it in')
+    parser.add_argument('--min', type=int, default=MIN_MOVE, help='Minimum number of initial random moves')
+    parser.add_argument('--max', type=int, default=MAX_MOVE, help='Maximum number of initial random moves')
+    args = parser.parse_args()
 
-    clingo = sys.argv[1]
+    clingo = args.clingo_path
+    STEPS = args.time_steps
+    SIZE = args.size
+    MIN_MOVE = args.min
+    MAX_MOVE = args.max
 
     game = Arrange(SIZE)
     game.pretty_print()
-    game.output_state()
+    game.write_state()
     game.write_asp()
     game.solve(clingo)

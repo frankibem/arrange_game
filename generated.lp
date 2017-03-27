@@ -2,18 +2,18 @@ size(0..3).
 block(b1). block(b2). block(b3). block(b4). block(b5). block(b6). block(b7). block(b8). 
 
 % Assigned weights
-weight(b2, 3). weight(b4, 2). weight(b3, 2). weight(b1, 3). weight(b6, 2). weight(b7, 3). weight(b5, 1). weight(b8, 2). 
+weight(b4, 1). weight(b1, 3). weight(b2, 2). weight(b5, 3). weight(b3, 3). weight(b7, 4). weight(b8, 4). weight(b6, 2). 
 
 % Initial cell configuration
-holds(on(b2, 0, 0), 0).
-holds(on(b4, 1, 0), 0).
-holds(on(b3, 2, 0), 0).
+holds(on(b4, 0, 0), 0).
+holds(on(b1, 1, 0), 0).
+holds(on(b2, 2, 0), 0).
 holds(on(hole, 0, 1), 0).
-holds(on(b1, 1, 1), 0).
-holds(on(b6, 2, 1), 0).
+holds(on(b5, 1, 1), 0).
+holds(on(b3, 2, 1), 0).
 holds(on(b7, 0, 2), 0).
-holds(on(b5, 1, 2), 0).
-holds(on(b8, 2, 2), 0).
+holds(on(b8, 1, 2), 0).
+holds(on(b6, 2, 2), 0).
 
 % Desired goal
 goal(I) :- holds(on(b1, 0, 0), I), holds(on(b2, 1, 0), I), holds(on(b3, 2, 0), I), holds(on(b4, 0, 1), I), holds(on(b5, 1, 1), I), holds(on(b6, 2, 1), I), holds(on(b7, 0, 2), I), holds(on(b8, 1, 2), I), holds(on(hole, 2, 2), I).

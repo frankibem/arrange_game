@@ -1,14 +1,14 @@
-clingo version 4.5.4
+clingo version 5.1.0
 Reading from generated.lp
 Solving...
 Answer: 1
-occurs(move(b1,left),0) occurs(move(b4,down),1) occurs(move(b2,right),2) occurs(move(b1,up),3) occurs(move(b4,left),4) occurs(move(b5,up),5) occurs(move(b8,left),6) total_weight(16)
-Optimization: 16
+occurs(move(b4,down),0) occurs(move(b1,left),1) occurs(move(b2,left),2) occurs(move(b3,up),3) occurs(move(b6,up),4) total_weight(11)
+Optimization: 11
 OPTIMUM FOUND
 
-Models       : 1     
+Models       : 1
   Optimum    : yes
-Optimization : 16
+Optimization : 11
 Calls        : 1
-Time         : 148.868s (Solving: 146.07s 1st Model: 0.85s Unsat: 145.22s)
-CPU Time     : 147.800s
+Time         : 109.939s (Solving: 108.22s 1st Model: 0.04s Unsat: 108.18s)
+CPU Time     : 108.370s
