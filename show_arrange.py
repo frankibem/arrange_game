@@ -163,6 +163,9 @@ class GUI:
         cell_size = 50
         board_size = (cell_size * SIZE)
 
+        # animate
+        time.sleep(.5)
+
         # Iterate through state steps
         for step in range(steps + 1):
             # Move down one Board Size when no more step boards fit on screen
@@ -228,9 +231,6 @@ def main():
 
                 # Parse Actions
                 parse_element(AS[element], state)
-
-                # animate
-                time.sleep(.5)
 
             # Handle Closing
             try:
