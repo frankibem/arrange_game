@@ -1,14 +1,15 @@
 import random
-import sys
 import subprocess
+import argparse
 
 """
-Requires python 3.5 and above (subprocess)
+Requires python 3.5 and above
 """
 
 TEMPLATE_FILE = "template.txt"  # contains non dynamic parts of problem (in ASP)
 GEN_FILE = 'generated.lp'  # Generated ASP program goes here
 SOLN_FILE = 'solution.txt'  # Clingo solution goes here
+STATE_FILE = "init_state.txt"  # Initial configuration is stored here
 
 # Placeholder for empty cell
 HOLE = -1
@@ -19,6 +20,12 @@ RIGHT = 'right'
 UP = 'up'
 DOWN = 'down'
 MOVES = [LEFT, RIGHT, UP, DOWN]
+
+# Arrange Game Settings
+STEPS = 15
+SIZE = 3
+MIN_MOVE = 15
+MAX_MOVE = 25
 
 
 class Arrange:
@@ -87,7 +94,7 @@ class Arrange:
             self.weights[c] = random.randint(self.min_weight, self.max_weight)
 
         # Shuffle board by taking random initial moves
-        move_count = random.randint(5, 15)
+        move_count = random.randint(MIN_MOVE, MAX_MOVE)
         for i in range(move_count):
             valid_moves = self.__valid_moves()
             direction = random.choice(valid_moves)
@@ -131,13 +138,21 @@ class Arrange:
             print()
         print('\n')
 
+    def write_state(self):
+        with open(STATE_FILE, 'w') as ofile:
+            for i in range(self.size):
+                for j in range(self.size):
+                    c = self.cells[i * self.size + j]
+                    ofile.write('{}({}) '.format(('X' if c == HOLE else c), self.weights[c]))
+                ofile.write('\n')
+
     def write_asp(self, fname=GEN_FILE):
         """
         Writes the rules to solve the current game using ASP (clingo)
         :param fname: The name of the output file
         """
 
-        print('Writing ASP program to {}'.format(fname))
+        print('Writing ASP program to {}...'.format(fname))
         with open(fname, 'w') as ofile:
             # Write size
             ofile.write('size(0..{}).\n'.format(self.size))
@@ -187,7 +202,7 @@ class Arrange:
         print('Done.')
 
     @staticmethod
-    def solve(clingo_path, steps=15, in_fname=GEN_FILE, soln_fname=SOLN_FILE):
+    def solve(clingo_path, steps=STEPS, in_fname=GEN_FILE, soln_fname=SOLN_FILE):
         print("Solving ASP program in {} and writing to {}...".format(in_fname, soln_fname))
 
         commands = [clingo_path, in_fname, '-c n={}'.format(steps), '0']
@@ -198,14 +213,23 @@ class Arrange:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Err: Path to clingo executable is required')
-        print('Usage: python3 arrange.py <path_to_clingo>')
-        exit(-1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('clingo_path', help='The path to the clingo solver')
+    parser.add_argument('-s', '--size', type=int, default=SIZE, help='The board dimensions will be (size x size)')
+    parser.add_argument('-n', '--time_steps', type=int, default=STEPS,
+                        help='The max number of steps for the clingo to solve it in')
+    parser.add_argument('--min', type=int, default=MIN_MOVE, help='Minimum number of initial random moves')
+    parser.add_argument('--max', type=int, default=MAX_MOVE, help='Maximum number of initial random moves')
+    args = parser.parse_args()
 
-    clingo = sys.argv[1]
+    clingo = args.clingo_path
+    STEPS = args.time_steps
+    SIZE = args.size
+    MIN_MOVE = args.min
+    MAX_MOVE = args.max
 
-    game = Arrange(2)
+    game = Arrange(SIZE)
     game.pretty_print()
+    game.write_state()
     game.write_asp()
     game.solve(clingo)
