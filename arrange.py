@@ -23,7 +23,7 @@ MOVES = [LEFT, RIGHT, UP, DOWN]
 
 # Arrange Game Settings
 STEPS = 15
-SIZE = 4
+SIZE = 3
 MIN_MOVE = 15
 MAX_MOVE = 25
 
