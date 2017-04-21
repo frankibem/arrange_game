@@ -1,0 +1,39 @@
+module main
+  depends on moving
+
+  sort declarations
+    blocks :: things
+    cells :: points
+
+  function declarations
+    statics
+      basic
+        adjacent: cell x cell -> boolean
+
+  object constants
+    hole :: blocks
+
+  axioms
+    connected(L1, L2) if adjacent(L1, L2),
+                         instance(L1, cell),
+                         instance(L2, cell).
+
+    % Moving a block from a source to a destination causes the hole to move to the source
+    occurs(M) causes loc_in(hole) = S if instance(M, move)
+                                         origin(M) = S.
+
+    % An item can only be in one location
+    loc_in(B) != L1 if instance(B, blocks),
+                      loc_in(B) = L2,
+                      L1 != L2.
+
+    % Two items cannot be in the same location
+    loc_in(B1) != P if instance(B1, blocks),
+                       instance(B2, blocks),
+                       loc_in(B2) = P,
+                       B1 != B2.                    
+
+    % Can't move a block to a cell if the hole is not on that cell
+    impossible occurs(M) if instance(M, move),
+                            dest(M) = D,
+                            loc(hole) != D.

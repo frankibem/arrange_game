@@ -1,0 +1,9 @@
+structure arrange_game
+  instances
+    b0, b1, ... in blocks
+    c0, c1, ... in cells
+
+  value of statics
+    symmetric_connectivity.
+    adjacent(c0, c1).
+    adjacent(...)
