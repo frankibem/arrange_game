@@ -1,0 +1,53 @@
+module moving
+  sort declarations
+    points, things :: universe
+    agents :: things
+
+    move :: action
+      attributes
+        actor : agents
+        object : things
+        origin : points
+        dest : points
+
+  function declarations
+    statics
+      basic 
+        symmetric_connectivity : boolean
+        transitive_connectivity : boolean
+    fluents
+      basic
+        connected : points x points -> boolean
+        total loc_in : things -> points
+
+  axioms
+    % Moving an object to a location causes it to be at that location
+    occurs(M) causes loc_in(O) = D if instance(M, move),
+                                      actor(M) = 0,
+                                      dest(M) = D.
+
+    connected(X, X).
+    connected(X, Y) if connected(Y, X),
+                        symmetric_connectivity.
+    -connected(X, Y) if -connected(Y, X),
+                        symmetric_connectivity.
+    connected(X, Z) if connected(X, Y),
+                        connected(Y, Z),
+                        transitive_connectivity.
+
+    % Can't move an object from an origin if the object is not at that origin
+    impossible occurs(M) if instance(M, move),
+                            object(M) = O,
+                            loc_in(O) != origin(M).
+
+    % Can't move an object to its current location
+    impossible occurs(M) if instance(M, move),
+                            object(M) = A,
+                            loc_in(O) = dest(M).
+
+    % Can't move an object if the origin and destination are not connected
+    impossible occurs(M) if instance(M, move),
+                            object(M) = O,
+                            loc_in(O) = S,
+                            dest(M) = D,
+                            -connected(O, D).  
