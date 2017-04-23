@@ -1,9 +1,55 @@
 structure arrange_game
   instances
-    b0, b1, ... in blocks
-    c0, c1, ... in cells
+    b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14.
+    c0, c1, c2, c3, c4 ,c5 , c6, c7, c8, c9, c10, c11, c12, c13, c14, c15.
 
   value of statics
     symmetric_connectivity.
     adjacent(c0, c1).
-    adjacent(...)
+    adjacent(c0,c4).
+    adjacent(c1,c0).
+    adjacent(c1,c2).
+    adjacent(c1,c5).
+    adjacent(c2,c1).
+    adjacent(c2,c3).
+    adjacent(c2,c6).
+    adjacent(c3,c2).
+    adjacent(c3,c7).
+    adjacent(c4,c1).
+    adjacent(c4,c5).
+    adjacent(c4,c8).
+    adjacent(c5,c4).
+    adjacent(c5,c6).
+    adjacent(c5,c1).
+    adjacent(c5,c9).
+    adjacent(c6,c5).
+    adjacent(c6,c7).
+    adjacent(c6,c2).
+    adjacent(c6,c10).
+    adjacent(c7,c6).
+    adjacent(c7,c3).
+    adjacent(c7,c11).
+    adjacent(c8,c9).
+    adjacent(c8,c4).
+    adjacent(c8,c12).
+    adjacent(c9,c8).
+    adjacent(c9,c10).
+    adjacent(c9,c5).
+    adjacent(c9,c13).
+    adjacent(c10,c9).
+    adjacent(c10,c11).
+    adjacent(c10,c6).
+    adjacent(c10,c14).
+    adjacent(c11,c10).
+    adjacent(c11,c7).
+    adjacent(c11,c15).
+    adjacent(c12,c13).
+    adjacent(c12,c8).
+    adjacent(c13,c12).
+    adjacent(c13,c14).
+    adjacent(c13,c9).
+    adjacent(c14,c13).
+    adjacent(c14,c15).
+    adjacent(c14,c10).
+    adjacent(c15,c14).
+    adjacent(c15,c11).
