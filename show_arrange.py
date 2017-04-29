@@ -6,8 +6,9 @@ class State:
 
     def __init__(self):
         self.state = []  # init_state
-        self.hole_X = 9
-        self.hole_Y = 9
+        self.hole_X = None
+        self.hole_Y = None
+        self.weight = 0
 
     def load(self, file):
         text = file.read().split('\n')
@@ -25,36 +26,22 @@ class State:
     def move(self, move):
         X = self.hole_X
         Y = self.hole_Y
+        
+        loc_N = self.find_N(move[0])        #Find number to move to hole
 
-        if(move == 'right'):
-            tmp = self.state[len(self.state) - 1][X][Y - 1]
-            self.state[len(self.state) - 1][X][Y -
-                                               1] = self.state[len(self.state) - 1][X][Y]
-            self.state[len(self.state) - 1][X][Y] = tmp
-            self.hole_Y = Y - 1
 
-        elif(move == 'left'):
-            tmp = self.state[len(self.state) - 1][X][Y + 1]
-            self.state[len(self.state) - 1][X][Y +
-                                               1] = self.state[len(self.state) - 1][X][Y]
-            self.state[len(self.state) - 1][X][Y] = tmp
-            self.hole_Y = Y + 1
+        # Make the move
+        tmp = self.state[len(self.state) - 1][X][Y]
+        self.state[len(self.state) - 1][X][Y] = self.state[len(self.state) - 1][loc_N[0]][loc_N[1]]
+        self.state[len(self.state) - 1][loc_N[0]][loc_N[1]] = tmp
+        self.hole_X = loc_N[0]
+        self.hole_Y = loc_N[1]  
 
-        elif(move == 'down'):
-            tmp = self.state[len(self.state) - 1][X - 1][Y]
-            self.state[len(self.state) - 1][X -
-                                            1][Y] = self.state[len(self.state) - 1][X][Y]
-            self.state[len(self.state) - 1][X][Y] = tmp
-            self.hole_X = X - 1
 
-        elif(move == 'up'):
-            tmp = self.state[len(self.state) - 1][X + 1][Y]
-            self.state[len(self.state) - 1][X +
-                                            1][Y] = self.state[len(self.state) - 1][X][Y]
-            self.state[len(self.state) - 1][X][Y] = tmp
-            self.hole_X = X + 1
+        self.weight = self.weight + int(self.state[len(self.state) - 1][X][Y][-2])
 
         self.print_state()
+
 
     def find_X(self):
         state = self.state[len(self.state) - 1]
@@ -67,6 +54,21 @@ class State:
                     self.hole_Y = j
                     continue
         print('X at: ({}, {})'.format(self.hole_X, self.hole_Y, end=""))
+
+
+    def find_N(self, N):
+        state = self.state[len(self.state) - 1]
+        X = 0
+        Y = 0
+        for i in range(len(state)):
+            for j in range(len(state)):
+                if(self.state[len(self.state) - 1][i][j][0] == N):
+                    X = i
+                    Y = j
+                    continue
+        # print('X at: ({}, {})'.format(self.hole_X, self.hole_Y, end=""))
+        return (X,Y)
+
 
     def print_state(self):
         print('State: ')
@@ -89,8 +91,8 @@ def parse_element(element, State):
                 op = ""
 
             elif(op == "move("):
-                # print_data(stack, op)
                 stack.append(op)
+                stack.append("loc(")
                 op = ""
 
             elif(op == "total_weight("):
@@ -101,23 +103,24 @@ def parse_element(element, State):
         if(ch == ')'):
 
             # Get Move Data
-            if(stack[len(stack) - 1] == "move("):
+            if(stack[len(stack) - 1] == "loc("):
                 stack.pop()
                 # print_data(stack, op)
-                # remove last ')' and split into  block and direction
+                # remove last ')' and split into  block and location
                 params = op[:len(op) - 1].split(",")
                 block = params[0]
-                direction = params[1]
-                print("Move: " + block + " - " + direction)
-                State.move(direction)
+                location = (params[1],params[2])
+                print("Move: " + block + " - " + location[0]+','+location[1]+ ')')
+                State.move(block +','+location[0]+','+location[1]+ ')')     #loc(X,Y)
                 op = ""
 
             # Get occurs data
             elif(stack[len(stack) - 1] == "occurs("):
                 stack.pop()
                 # print_data(stack, op)
-                step = op[1:len(op) - 1]
-                print("Step: " + step)
+                print("operation: ", op)
+                step = len(State.state)
+                print("Step: " + str(step))
                 op = ""
 
             # Get Total Weight Data
@@ -155,6 +158,12 @@ class GUI:
         border.setWidth(3)
         border.draw(self.win)
 
+
+    def draw_total_weight(self,weight):
+        text = Text(Point(620,20), "Total Weight: " + weight)
+        text.setSize(24)
+        text.draw(self.win)
+
     def draw_board(self, steps):
         # Constants
         SIZE = len(self.state[0])
@@ -179,6 +188,10 @@ class GUI:
             bottom_right_y = (edge + board_size) + \
                 ((board_size + edge) * LEVEL)
 
+            #Upper bound for weight
+            top_left_y = top_left_y + 50
+            bottom_right_y = bottom_right_y + 50
+
             for i in range(SIZE):
                 # Draw Board Edges
                 self.draw_border(top_left_x, top_left_y,
@@ -189,8 +202,8 @@ class GUI:
                                bottom_right_x, top_left_y + (cell_size * i))
 
                 # Vertical Lines
-                self.draw_line(top_left_x + (cell_size * i), edge + (board_size + edge) * LEVEL, top_left_x + (
-                    cell_size * i), edge + (cell_size * (SIZE)) + ((board_size + edge) * LEVEL))
+                self.draw_line(top_left_x + (cell_size * i), edge + (board_size + edge) * LEVEL + 50, top_left_x + (
+                    cell_size * i), edge + (cell_size * (SIZE)) + ((board_size + edge) * LEVEL) + 50)
 
         # Print Text
         for x in range(SIZE):
@@ -200,8 +213,8 @@ class GUI:
 
 
 def main():
-    with open('solution.txt', 'r') as sol:
-        with open('init_state.txt', 'r') as init_state:
+    with open('out/solution.txt', 'r') as sol:
+        with open('out/initial_state.txt', 'r') as init_state:
             state = State()
             state.load(init_state)
 
@@ -231,6 +244,9 @@ def main():
 
                 # Parse Actions
                 parse_element(AS[element], state)
+
+            #Draw total weight
+            gui.draw_total_weight(str(state.weight))
 
             # Handle Closing
             try:
