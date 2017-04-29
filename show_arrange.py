@@ -27,12 +27,16 @@ class State:
         X = self.hole_X
         Y = self.hole_Y
         
-        loc_N = self.find_N(move[0])        #Find number to move to hole
+        N = move.split(',')
+        N=N[0]
+        loc_N = self.find_N(N)        #Find number to move to hole
+        
+        print("Block: ",N, "in",loc_N)
 
 
         # Make the move
-        tmp = self.state[len(self.state) - 1][X][Y]
-        self.state[len(self.state) - 1][X][Y] = self.state[len(self.state) - 1][loc_N[0]][loc_N[1]]
+        tmp = self.state[len(self.state) - 1][self.hole_X][self.hole_Y]
+        self.state[len(self.state) - 1][self.hole_X][self.hole_Y] = self.state[len(self.state) - 1][loc_N[0]][loc_N[1]]
         self.state[len(self.state) - 1][loc_N[0]][loc_N[1]] = tmp
         self.hole_X = loc_N[0]
         self.hole_Y = loc_N[1]  
@@ -62,7 +66,8 @@ class State:
         Y = 0
         for i in range(len(state)):
             for j in range(len(state)):
-                if(self.state[len(self.state) - 1][i][j][0] == N):
+                B = self.state[len(self.state) - 1][i][j].split("(")
+                if(B[0] == N):
                     X = i
                     Y = j
                     continue
@@ -110,7 +115,7 @@ def parse_element(element, State):
                 params = op[:len(op) - 1].split(",")
                 block = params[0]
                 location = (params[1],params[2])
-                print("Move: " + block + " - " + location[0]+','+location[1]+ ')')
+                print("Move: " + block + " to " + location[0]+','+location[1]+ ')')
                 State.move(block +','+location[0]+','+location[1]+ ')')     #loc(X,Y)
                 op = ""
 
