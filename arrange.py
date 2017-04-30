@@ -1,15 +1,13 @@
+import os
 import random
 import subprocess
 import argparse
 
-"""
-Requires python 3.5 and above
-"""
-
 TEMPLATE_FILE = "template.txt"  # contains non dynamic parts of problem (in ASP)
 GEN_FILE = 'generated.lp'  # Generated ASP program goes here
-SOLN_FILE = 'solution.txt'  # Clingo solution goes here
-STATE_FILE = "init_state.txt"  # Initial configuration is stored here
+SOLN_FILE = 'solution.txt'  # Clingo solution to logic program in GEN_FILE goes here
+STATE_FILE = "initial_state.txt"  # Initial configuration is stored here
+OUT_DIR = "out"  # Output files go here
 
 # Placeholder for empty cell
 HOLE = -1
@@ -33,7 +31,7 @@ class Arrange:
     Environment that represents the 'Arrange Game'
     """
 
-    def __init__(self, size=2, min_weight=1, max_weight=5):
+    def __init__(self, size=2, min_weight=1, max_weight=5, steps=STEPS):
         """
         Creates a new game\n
         :param size: Dimension of game will be (size x size). Must be >= 2\n
@@ -47,12 +45,14 @@ class Arrange:
         self.size = size
         self.min_weight = min_weight
         self.max_weight = max_weight
+        self.steps = steps
         self.cells = []
         self.weights = dict()
         self.hole_index = -1
 
         # Create initial configuration
         self.reset()
+        self.__setup()
 
     def __valid_moves(self):
         """
@@ -139,28 +139,25 @@ class Arrange:
         print('\n')
 
     def write_state(self):
-        with open(STATE_FILE, 'w') as ofile:
+        with open(os.path.join(OUT_DIR, STATE_FILE), 'w') as ofile:
             for i in range(self.size):
                 for j in range(self.size):
                     c = self.cells[i * self.size + j]
                     ofile.write('{}({}) '.format(('X' if c == HOLE else c), self.weights[c]))
                 ofile.write('\n')
 
-    def write_asp(self, fname=GEN_FILE):
+    def write_asp(self):
         """
         Writes the rules to solve the current game using ASP (clingo)
         :param fname: The name of the output file
         """
+        file_path = os.path.join(OUT_DIR, GEN_FILE)
+        print('Writing ASP program to {}...'.format(file_path))
 
-        print('Writing ASP program to {}...'.format(fname))
-        with open(fname, 'w') as ofile:
-            # Write size
-            ofile.write('size(0..{}).\n'.format(self.size))
-
-            # Write block predicates
-            for i in range(1, self.size * self.size):
-                ofile.write('block(b{}). '.format(i))
-            ofile.write('\n\n')
+        with open(file_path, 'w') as ofile:
+            # Write constants
+            ofile.write('#const n = {}.\n'.format(self.steps))
+            ofile.write('#const board_size = {}.\n\n'.format(self.size))
 
             # Write assigned weights
             ofile.write('% Assigned weights\n')
@@ -169,8 +166,8 @@ class Arrange:
                     continue
 
                 weight = self.weights[c]
-                c_str = 'b{}'.format(c)
-                ofile.write('weight({}, {}). '.format(c_str, weight))
+                item = str(c)
+                ofile.write('weight({}, {}). '.format(item, weight))
             ofile.write('\n\n')
 
             # Write initial block configuration
@@ -178,8 +175,8 @@ class Arrange:
             for y in range(self.size):
                 for x in range(self.size):
                     c = self.cells[y * self.size + x]
-                    c_str = 'hole' if c == HOLE else 'b{}'.format(c)
-                    ofile.write('holds(on({}, {}, {}), 0).\n'.format(c_str, x, y))
+                    item = 'hole' if c == HOLE else str(c)
+                    ofile.write('holds(on({}, loc({},{})), 0).\n'.format(item, x, y))
 
             # Write goal
             last = (self.size * self.size) - 1
@@ -191,9 +188,20 @@ class Arrange:
                     if c == last:
                         break
 
-                    c_str = 'b{}'.format(c + 1)
-                    ofile.write('holds(on({}, {}, {}), I), '.format(c_str, x, y))
-            ofile.write('holds(on(hole, {}, {}), I).\n\n'.format(self.size - 1, self.size - 1))
+                    item = str(c + 1)
+                    ofile.write('holds(on({}, loc({}, {})), I), '.format(item, x, y))
+            ofile.write('holds(on(hole, loc({}, {})), I).\n\n'.format(self.size - 1, self.size - 1))
+
+            # Write cell adjacency information
+            for y in range(0, self.size):
+                for x in range(0, self.size):
+                    if (x + 1) < self.size:
+                        ofile.write(
+                            'adjacent(loc({}, {}), loc({}, {})).\n'.format(x, y, x + 1, y))
+                    if (y + 1) < self.size:
+                        ofile.write(
+                            'adjacent(loc({}, {}), loc({}, {})).\n'.format(x, y, x, y + 1))
+            ofile.write('\n')
 
             # Write out rest of program logic
             with open(TEMPLATE_FILE, 'r') as ifile:
@@ -201,15 +209,23 @@ class Arrange:
                     ofile.write(line)
         print('Done.')
 
-    @staticmethod
-    def solve(clingo_path, steps=STEPS, in_fname=GEN_FILE, soln_fname=SOLN_FILE):
+    def solve(self, clingo_path):
+        in_fname = os.path.join(OUT_DIR, GEN_FILE)
+        soln_fname = os.path.join(OUT_DIR, SOLN_FILE)
         print("Solving ASP program in {} and writing to {}...".format(in_fname, soln_fname))
 
-        commands = [clingo_path, in_fname, '-c n={}'.format(steps), '0']
+        commands = [clingo_path, in_fname]
         with open(soln_fname, 'w') as ofile:
             subprocess.run(commands, stdout=ofile)
 
         print('Done.')
+
+    def __setup(self):
+        """
+        Creates and cleans the output directory (if necessary)
+        """
+        os.makedirs(OUT_DIR, exist_ok=True)
+        [os.remove(os.path.join(OUT_DIR, f)) for f in os.listdir(OUT_DIR)]
 
 
 if __name__ == '__main__':
@@ -229,7 +245,6 @@ if __name__ == '__main__':
     MAX_MOVE = args.max
 
     game = Arrange(SIZE)
-    game.pretty_print()
     game.write_state()
     game.write_asp()
     game.solve(clingo)

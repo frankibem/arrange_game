@@ -1,6 +1,4 @@
 
 .idea/
 __pycache__/
-generated.lp
-init_state.txt
-solution.txt
+out/

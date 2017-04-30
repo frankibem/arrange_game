@@ -1,57 +1,56 @@
-#const n = 6.
 step(0..n).
+num(0..1000).
+cood(0..board_size-1).
+
+cell_count(N) :- N = (board_size * board_size) - 1.
+block(1..N) : cell_count(N).
 
 item(X) :- block(X).
 item(hole).
 
-dir(left). dir(right). dir(up). dir(down).
+cell(loc(X, Y)) :- cood(X), cood(Y).
 
-fluent(on(I, X, Y), inertial) :- item(I), size(X), size(Y).
-action(move(B, D)) :- block(B), dir(D).
+fluent(on(I, C), inertial) :- item(I), cell(C).
+fluent(weights_moved(N), inertial) :- num(N).
+action(move(B, C)) :- block(B), cell(C).
 
-% Weight calculation
-total_weight(N) :- goal(I), sum(I, N).
+same(C, C) :- cell(C).
+-same(C1, C2) :- not same(C1, C2),
+                 cell(C1), cell(C2).
 
-sum(0, 0).
-sum(I, N) :- sum(I-1, N1), occurs(move(B, D), I-1), weight(B, W), N = N1 + W.
+% C1 is adjacent to C2 if C2 is adjacent to C1
+adjacent(C1, C2) :- adjacent(C2, C1), cell(C1), cell(C2).
 
 % Causal laws
-% Moving B up causes it to go up and the hole to go down
-holds(on(B, X, Y-1), I+1) :- occurs(move(B, up), I), holds(on(B, X, Y), I).
-holds(on(hole, X, Y), I+1) :- occurs(move(B, up), I), holds(on(B, X, Y), I).
+% Moving B to C2 causes changes its position to C2 if C2 is adjacent to its current position
+holds(on(B, C2), I+1) :- occurs(move(B, C2), I), holds(on(B, C1), I), adjacent(C1, C2).
 
-% Moving B down causes it to go down and the hole up
-holds(on(B, X, Y+1), I+1) :- occurs(move(B, down), I), holds(on(B, X, Y), I).
-holds(on(hole, X, Y), I+1) :- occurs(move(B, down), I), holds(on(B, X, Y), I).
+% Moving B to C2 changes the position of the hole to C1 if B is on C1
+holds(on(hole, C1), I+1) :- occurs(move(B, C2), I), holds(on(B, C1), I), adjacent(C1, C2).
 
-% Moving B to the right causes it to go right and the hole left
-holds(on(B, X+1, Y), I+1) :- occurs(move(B, right), I), holds(on(B, X, Y), I).
-holds(on(hole, X, Y), I+1) :- occurs(move(B, right), I), holds(on(B, X, Y), I).
-
-% Moving B to the left causes it to go to the left and the hole right
-holds(on(B, X-1, Y), I+1) :- occurs(move(B, left), I), holds(on(B, X, Y), I).
-holds(on(hole, X, Y), I+1) :- occurs(move(B, left), I), holds(on(B, X, Y), I).
+% Moving a block increases the weights moved by the weight of the block
+holds(weights_moved(N+W), I+1) :- occurs(move(B, C), I), holds(weights_moved(N), I), weight(B, W).
 
 % State constraints
 % An item can only be in one location
--holds(on(C, X1, Y1), I) :- holds(on(C, X2, Y2), I), -same(X1, Y1, X2, Y2).
-
-same(X1, Y1, X2, Y2) :- X1 == X2, Y1 == Y2,
-						size(X1), size(X2), size(Y1), size(Y2).
--same(X1, Y1, X2, Y2) :- not same(X1, Y1, X2, Y2),
-						 size(X1), size(X2), size(Y1), size(Y2).
+-holds(on(C, loc(X1, Y1)), I) :- holds(on(C, loc(X2, Y2)), I), -same(loc(X1, Y1), loc(X2, Y2)).
 
 % Two items cannot share the same location
--holds(on(C, X, Y), I) :- holds(on(C1, X, Y), I), C != C1,
-						  item(C), item(C1).
+-holds(on(X, C), I) :- holds(on(Y, C), I), X != Y,
+                       item(X), item(Y), cell(C).
+
+% same(C1, C2) is true when C1 = C2 and false otherwise
+same(C, C) :- cell(C).
+-same(C1, C2) :- not same(C1, C2),
+                 cell(C1), cell(C2).
+
+% Uniqueness of values
+-holds(weights_moved(N1), I) :- holds(weights_moved(N2), I), N1 != N2,
+                                num(N1), num(N2).
 
 % Executability conditions
-% Block B can't be moved to the right, it the hole is not to its right...
--occurs(move(B, right), I) :- holds(on(B, X, Y), I), -holds(on(hole, X+1, Y), I).
--occurs(move(B, left), I) :- holds(on(B, X, Y), I), -holds(on(hole, X-1, Y), I).
--occurs(move(B, up), I) :- holds(on(B, X, Y), I), -holds(on(hole, X, Y-1), I).
--occurs(move(B, down), I) :- holds(on(B, X, Y), I), -holds(on(hole, X, Y+1), I).
-
+% Block B can't be moved to cell C2 if the hole is not on C2
+-occurs(move(B, C2), I) :- holds(on(B, C1), I), -holds(on(hole, C2), I).
 
 % Inertial axioms
 holds(F, I+1) :- fluent(F, inertial), holds(F, I), not -holds(F, I+1), I < n.
@@ -77,6 +76,10 @@ occurs(A, I) | -occurs(A, I) :- not goal(I),
 action_occurred(I) :- occurs(A, I).
 :- not action_occurred(J), goal(I), J < I,
    step(I), step(J), not goal(I - 1).
+
+total_weight(N) :- goal(I), holds(weights_moved(N), I).
+
+holds(weights_moved(0), 0).
 
 % We want to minimize the total weight
 #minimize { X : total_weight(X) }.
