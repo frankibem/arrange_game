@@ -23,7 +23,7 @@ module moving
   axioms
     % Moving an object to a location causes it to be at that location
     occurs(M) causes loc_in(O) = D if instance(M, move),
-                                      actor(M) = 0,
+                                      object(M) = O,
                                       dest(M) = D.
 
     connected(X, X).

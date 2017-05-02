@@ -2,25 +2,40 @@ module main
   depends on moving
 
   sort declarations
-    blocks :: things
-    cells :: points
+    item :: things
+    block :: item
+    cell :: points
+    weight :: natural_number
 
   function declarations
     statics
       basic
+        weight: block -> weight
         adjacent: cell x cell -> boolean
+    fluents
+      basic
+        weights_moved -> weight
 
   object constants
-    hole :: blocks
+    hole :: item
 
   axioms
     connected(L1, L2) if adjacent(L1, L2),
-                         instance(L1, cell),
-                         instance(L2, cell).
+                          instance(L1, cell),
+                          instance(L2, cell).
 
-    % Moving a block from a source to a destination causes the hole to move to the source
-    occurs(M) causes loc_in(hole) = S if instance(M, move)
-                                         origin(M) = S.
+    % Moving a block to a cell changes the location of the hole to the previous location of the block
+    occurs(M) causes loc_in(hole) = S if instance(M, move),
+                                          object(M) = B,
+                                          instance(B, block),
+                                          origin(M) = S.
+
+    % Moving a block increases the weights moved by the weight of the block
+    occurs(M) causes weights_moved(N+W) if instance(M, move),
+                                            object(M) = B,
+                                            instance(B, block),
+                                            weights_moved(N),
+                                            weight(B, W).                                             
 
     % An item can only be in one location
     loc_in(B) != L1 if instance(B, blocks),
@@ -31,7 +46,10 @@ module main
     loc_in(B1) != P if instance(B1, blocks),
                        instance(B2, blocks),
                        loc_in(B2) = P,
-                       B1 != B2.                    
+                       B1 != B2.            
+
+    % Uniqueness of values
+    weights_moved != N1 if weights_moved = N2, N1 != N2.
 
     % Can't move a block to a cell if the hole is not on that cell
     impossible occurs(M) if instance(M, move),
